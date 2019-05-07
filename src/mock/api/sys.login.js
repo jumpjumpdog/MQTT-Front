@@ -3,7 +3,6 @@ const userDB = [
   { username: 'editor', password: 'editor', uuid: 'editor-uuid', name: '编辑' },
   { username: 'user1', password: 'user1', uuid: 'user1-uuid', name: '用户1' }
 ]
-
 export default [
   {
     path: '/api/login',

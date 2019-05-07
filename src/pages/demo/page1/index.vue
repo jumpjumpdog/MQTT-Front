@@ -1,13 +1,16 @@
 <template>
   <d2-container :filename="filename">
-    <template slot="header">Page 1 header</template>
-    Hello World
+    <template slot="header">设备列表</template>
+    <EqmTable></EqmTable>
   </d2-container>
 </template>
 
 <script>
 export default {
-  name: 'page1',
+  name: 'EqmList',
+  components: {
+    'EqmTable': () => import('../table/EqmTable.vue')
+  },
   data () {
     return {
       filename: __filename
