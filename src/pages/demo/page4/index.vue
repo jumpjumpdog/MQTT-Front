@@ -1,20 +1,18 @@
 <template>
   <d2-container :filename="filename">
-    <template slot="header">设备实时详情</template>
-    <EqmMonthDetail></EqmMonthDetail>
+    <template slot="header">用户列表</template>
+    <OwnerTable></OwnerTable>
   </d2-container>
 </template>
-
 <script>
 export default {
-  name: 'EqmDetail',
   data () {
     return {
       filename: __filename
     }
   },
   components: {
-    'EqmMonthDetail': () => import('../table/EqmMonDetail.vue')
+    'OwnerTable': () => import('../table/OwnerTable.vue')
   }
 }
 </script>

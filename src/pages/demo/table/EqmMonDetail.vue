@@ -24,11 +24,10 @@
         </el-form>
 </template>
 <script>
-import { constants } from 'fs'
 const attributesConst = ['温度', '湿度']
 // 气温范围，数据格式：[时间戳, 范围起始值, 范围结束值]
 // 平均数据，格式：[时间戳, 值]
-const tRangesConst = [
+let tRangesConst = [
   [1246406400000, 14.3, 27.7],
   [1246492800000, 14.5, 27.8],
   [1246579200000, 15.5, 29.6],
@@ -61,7 +60,7 @@ const tRangesConst = [
   [1248912000000, 11.8, 18.5],
   [1248998400000, 10.8, 16.1]
 ]
-const tAveragesConst = [
+let tAveragesConst = [
   [1246406400000, 21.5],
   [1246492800000, 22.1],
   [1246579200000, 23],
@@ -95,8 +94,8 @@ const tAveragesConst = [
   [1248998400000, 13.6]
 ]
 
-const hRangesConst = tRangesConst
-const hAverageConst = tAveragesConst
+let hRangesConst = JSON.parse(JSON.stringify(tRangesConst))
+let hAverageConst = JSON.parse(JSON.stringify(tAveragesConst))
 
 const tYAxisConst = { // 第一条Y轴
   labels: {
@@ -129,13 +128,73 @@ const hYAxisConst = { // 第二条Y轴
   opposite: true
 }
 
-const tRangeSeriesConst = 0
-
+const tRangeSeriesConst = {
+  name: '温度范围',
+  data: tRangesConst,
+  tooltip: {
+    valueSuffix: ' °C'
+  },
+  type: 'arearange',
+  lineWidth: 0,
+  linkedTo: ':previous', // 与上一个数据列进行关联，或者直接赋值 0
+  color: Highcharts.getOptions().colors[0],
+  fillOpacity: 0.3,
+  zIndex: 0,
+  marker: {
+    enabled: false
+  }
+}
+const tAverageSeriesConst = {
+  name: '平均温度',
+  data: tAveragesConst,
+  tooltip: {
+    valueSuffix: ' °C'
+  },
+  zIndex: 1, // 控制显示层叠
+  marker: {
+    fillColor: 'white',
+    lineWidth: 2,
+    // eslint-disable-next-line no-undef
+    lineColor: Highcharts.getOptions().colors[0]
+  }
+}
 var i = 0
 for (; i < tRangesConst.length; i++) {
   hRangesConst[i][1] = Math.round(Math.random() * 100)
   hRangesConst[i][2] = Math.round(Math.random() * 100)
   hAverageConst[i][1] = (hRangesConst[i][1] + hRangesConst[i][2]) * 0.5
+}
+console.log(hAverageConst)
+console.log(tAveragesConst)
+const hRangeSeriesConst = {
+  name: '范围',
+  data: hRangesConst,
+  tooltip: {
+    valueSuffix: ' %'
+  },
+  type: 'arearange',
+  lineWidth: 0,
+  linkedTo: ':previous', // 与上一个数据列进行关联，或者直接赋值 0
+  color: Highcharts.getOptions().colors[0],
+  fillOpacity: 0.3,
+  zIndex: 0,
+  marker: {
+    enabled: false
+  }
+}
+const hAverageSeriesConst = {
+  name: '湿度',
+  data: hAverageConst,
+  tooltip: {
+    valueSuffix: ' %'
+  },
+  zIndex: 1, // 控制显示层叠
+  marker: {
+    fillColor: 'white',
+    lineWidth: 2,
+    // eslint-disable-next-line no-undef
+    lineColor: Highcharts.getOptions().colors[0]
+  }
 }
 
 export default{
@@ -160,13 +219,30 @@ export default{
     }
   },
   watch: {
-    checkedAttributes (newValue, oldValue) {
-      this.drawChart('new Charts2')
-    }
+    // checkedAttributes (newValue, oldValue) {
+    //   console.log(newValue)
+    //   console.log(oldValue)
+    //   if (newValue.length === 2) {
+    //     let series = [tAverageSeriesConst, tRangeSeriesConst, hAverageSeriesConst, hRangeSeriesConst]
+    //     let yAxis = [tYAxisConst, hYAxisConst]
+    //     this.drawChart('T and H charts', series, yAxis)
+    //   } else if (newValue.length === 0) {
+    //     this.drawChart('T and H charts', [], [])
+    //   } else if (newValue[0] === '温度') {
+    //     let series = [tAverageSeriesConst, tRangeSeriesConst]
+    //     let yAxis = [tYAxisConst]
+    //     this.drawChart('T charts', series, yAxis)
+    //   } else if (newValue[0] === '湿度') {
+    //     let series = [hAverageSeriesConst, hRangeSeriesConst]
+    //     let yAxis = [hYAxisConst]
+    //     this.drawChart('H charts', series, yAxis)
+    //   }
+    // }
   },
   methods: {
     drawChart: function (title, pSeries, pYAxis, reversed = false) {
       // eslint-disable-next-line no-undef
+      console.log(pSeries.length)
       Highcharts.chart('container', {
         title: {
           text: title
@@ -184,64 +260,7 @@ export default{
         credits: {
           enabled: false // remove high chart logo hyper-link
         },
-        series: [{
-          name: '温度',
-          data: this.$data.eqmForm.temperatureAverages,
-          tooltip: {
-            valueSuffix: ' °C'
-          },
-          zIndex: 1, // 控制显示层叠
-          marker: {
-            fillColor: 'white',
-            lineWidth: 2,
-            // eslint-disable-next-line no-undef
-            lineColor: Highcharts.getOptions().colors[0]
-          }
-        }, {
-          name: '温度范围',
-          data: this.$data.eqmForm.temperatureRanges,
-          tooltip: {
-            valueSuffix: ' °C'
-          },
-          type: 'arearange',
-          lineWidth: 0,
-          linkedTo: ':previous', // 与上一个数据列进行关联，或者直接赋值 0
-          color: Highcharts.getOptions().colors[0],
-          fillOpacity: 0.3,
-          zIndex: 0,
-          marker: {
-            enabled: false
-          }
-        },
-        {
-          name: '湿度',
-          data: this.$data.eqmForm.humidAverage,
-          tooltip: {
-            valueSuffix: ' %'
-          },
-          zIndex: 1, // 控制显示层叠
-          marker: {
-            fillColor: 'white',
-            lineWidth: 2,
-            // eslint-disable-next-line no-undef
-            lineColor: Highcharts.getOptions().colors[0]
-          }
-        }, {
-          name: '范围',
-          data: this.$data.eqmForm.humidRanges,
-          tooltip: {
-            valueSuffix: ' %'
-          },
-          type: 'arearange',
-          lineWidth: 0,
-          linkedTo: ':previous', // 与上一个数据列进行关联，或者直接赋值 0
-          color: Highcharts.getOptions().colors[0],
-          fillOpacity: 0.3,
-          zIndex: 0,
-          marker: {
-            enabled: false
-          }
-        }]
+        series: pSeries
       })
     },
     queryButton: function (eqmForm) {
@@ -256,11 +275,15 @@ export default{
         humidRanges: hRangesConst,
         humidAverage: hAverageConst
       }
-      this.drawChart('new Charts', true)
+      let series = [tAverageSeriesConst, tRangeSeriesConst, hAverageSeriesConst, hRangeSeriesConst]
+      let yAxis = [tYAxisConst, hYAxisConst]
+      this.drawChart('T and H charts', series, yAxis)
     }
   },
   mounted () {
-    this.drawChart('0001温度变化')
+    let series = [tAverageSeriesConst, tRangeSeriesConst, hAverageSeriesConst, hRangeSeriesConst]
+    let yAxis = [tYAxisConst, hYAxisConst]
+    this.drawChart('T and H charts', series, yAxis)
   }
 }
 </script>

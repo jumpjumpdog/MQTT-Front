@@ -1,93 +1,151 @@
 <template>
     <el-table :data="eqmList" style="100%" label-position="top">
-        <el-table-column prop="eqmId" label="设备ID" width="100%">
+        <el-table-column prop="id" label="设备ID" min-width="30%">
         </el-table-column>
-        <el-table-column prop="createDate" label="创建时间" width="100%">
+        <el-table-column prop="name" label="设备名称" min-width="20%">
         </el-table-column>
-        <el-table-column prop="isVaild" label="有效状态" width="100%">
+        <el-table-column prop="create_date" label="创建时间" min-width="20%">
         </el-table-column>
-        <el-table-column label="操作" align="center">
+        <el-table-column prop="status" label="有效状态" min-width="10%">
+        </el-table-column>
+        <el-table-column prop="owner_id" label="设备负责人编号" min-width="20%">
+        </el-table-column>
+        <el-table-column label="操作" align="center" min-width="20">
             <template scope="scope" >
                 <el-button size="small" type="primary" icon="el-icon-edit" @click="openEditDialog(scope.$index, scope.row.propertities)"></el-button>
                 <el-button size="small" type="danger" icon="el-icon-delete" @click="openDeleteDialog(scope.$index, scope.row.propertities)"></el-button>
             </template>
-        </el-table-column> 
+        </el-table-column>
     <el-dialog title="提示" :visible.sync="deleteDialogVisible" width="30%" :append-to-body="true">
         <span>确认删除?</span>
         <span slot="footer" class="dialog-footer">
             <el-button @click="deleteDialogVisible = false">取 消</el-button>
             <el-button type="danger" @click="handleDelete">确 定</el-button>
-        </span> 
+        </span>
     </el-dialog>
     <el-dialog title="编辑" :visible.sync="editDialogVisible" width="30%" :append-to-body="true">
         <el-form ref="editForm" :model="editForm" label-width="80%" label-position="top">
-            <el-form-item label="设备编号" prop="eqmId">
-                <el-input v-model="editForm.eqmId" readonly></el-input>
+            <el-form-item label="设备编号" prop="id">
+                <el-input v-model="editForm.id" readonly></el-input>
             </el-form-item>
-            <el-form-item label="创建时间" prop="createDate">
-                <el-input v-model="editForm.createDate" readonly></el-input>
+            <el-form-item label="设备名称" prop="name">
+                <el-input v-model="editForm.name"></el-input>
             </el-form-item>
-            <el-form-item label="有效状态"  prop="isVaild">
-                <el-input v-model="editForm.isVaild"></el-input>
+            <el-form-item label="创建时间" prop="create_date">
+                <el-input v-model="editForm.create_date" ></el-input>
+            </el-form-item>
+            <el-form-item label="有效状态"  prop="status">
+                <el-input v-model="editForm.status"></el-input>
             </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
             <el-button type="primary" @click="editDialogVisible = false">取 消</el-button>
             <el-button type="primary" @click="resetForm('editForm')">重置</el-button>
             <el-button type="primary" @click="handleEdit">确 定</el-button>
-        </span> 
+        </span>
     </el-dialog>
-    </el-table> 
+    </el-table>
 </template>
 
 <script>
+import { Mysql } from '@api/mysql.post'
+import { truncate } from 'fs'
 export default {
-    data(){
-        return{
-            eqmList:[
-                {'eqmId':1,'createDate':'2016-05-02','isVaild':'true'},
-                {'eqmId':2,'createDate':'2016-05-03','isVaild':'true'},
-                {'eqmId':3,'createDate':'2016-05-04','isVaild':'false'},
-            ],
-            deleteDialogVisible:false,   
-            editDialogVisible:false, 
-            itemIndex:-1,
-            editForm:{},
-        }
-    },
-    methods:{
-        handleDelete: function () {
-            // handleDelete(scope.$index, scope.row.properties)
-            this.$data.eqmList.splice(this.$data.itemIndex,1);
-            this.$data.deleteDialogVisible = false; 
-        },
-        openDeleteDialog: function (index, row) {
-            this.$data.deleteDialogVisible = true;
-            this.$data.itemIndex = index;
-        },
-        openEditDialog: function (index, row) {
-            this.$data.editDialogVisible = true;
-            this.$data.itemIndex = index;
-            this.$data.editForm = this.$data.eqmList[this.$data.itemIndex];
-        },
-        handleEdit: function () {
-          this.$data.eqmList[this.$data.itemIndex] = this.$data.editForm;  
-          this.$data.editDialogVisible = false;
-        },
-        resetForm: function (refname) {
-          console.log( this.$data.eqmList[this.$data.itemIndex]);
-          this.$data.editForm = this.$data.eqmList[this.$data.itemIndex];
-          this.$refs[refname].resetFields();
-        },
-          handleClose(done) {
-        // this.$confirm('确认关闭？')
-        //   .then(_ => {
-        //     done();
-        //   })
-        //   .catch(_ => {});
-      }
-    
+  data () {
+    return {
+      eqmList: [
+
+      ],
+      deleteDialogVisible: false,
+      editDialogVisible: false,
+      itemIndex: -1,
+      editForm: {
+        id: '',
+        create_date: '',
+        status: '' }
     }
+  },
+  methods: {
+    handleDelete: function () {
+      // handleDelete(scope.$index, scope.row.properties)
+      let deleteItem = this.$data.eqmList[this.$data.itemIndex]
+      Mysql({
+        action: 'deleteEqp',
+        id: deleteItem.id
+      }).then((res) => {
+        if (res.result === true) {
+          alert('删除成功')
+          this.$data.eqmList.splice(this.$data.itemIndex, 1)
+        } else {
+          alert('删除失败')
+        }
+      // eslint-disable-next-line handle-callback-err
+      }).catch((err) => {
+        alert('删除error')
+      })
+      this.$data.deleteDialogVisible = false
+    },
+    openDeleteDialog: function (index, row) {
+      this.$data.deleteDialogVisible = true
+      this.$data.itemIndex = index
+    },
+    openEditDialog: function (index, row) {
+      this.$data.editDialogVisible = true
+      this.$data.itemIndex = index
+      var sourceForm = this.$data.eqmList[this.$data.itemIndex]
+      for (let key in sourceForm) {
+        this.$data.editForm[key] = sourceForm[key]
+      }
+    },
+    handleEdit: function () {
+      let para = {}
+      para['action'] = 'editEqp'
+      for (let key in this.$data.editForm) {
+        para[key] = this.$data.editForm[key]
+      }
+      Mysql(
+        para
+      ).then((res) => {
+        if (res.result === true) {
+          for (let key in this.$data.editForm) {
+            this.$data.eqmList[this.$data.itemIndex][key] = this.$data.editForm[key]
+          }
+          alert('修改成功')
+        } else {
+          alert('修改失败')
+        }
+      // eslint-disable-next-line handle-callback-err
+      }).catch((err) => {
+        console.log('修改设备的axios异常')
+      })
+      this.$data.eqmList[this.$data.itemIndex]['status'] = this.$data.editForm['status']
+      console.log(this.$data.eqmList)
+      this.$data.editDialogVisible = false
+    },
+    resetForm: function (refname) {
+      this.$refs[refname].resetFields()
+    },
+    handleClose (done) {
+      // this.$confirm('确认关闭？')
+      //   .then(_ => {
+      //     done();
+      //   })
+      //   .catch(_ => {});
+    }
+
+  },
+  mounted () {
+    Mysql({
+      action: 'equipments'
+    }).then((response) => {
+      this.$data.eqmList = response.data
+      console.log('获取成功')
+      console.log(this.$data.eqmList)
+    // eslint-disable-next-line handle-callback-err
+    }).catch((err) => {
+      console.log(err)
+      alert('获取设备列表失败')
+    })
+  }
 }
 </script>
-

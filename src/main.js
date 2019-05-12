@@ -14,7 +14,9 @@ import menuHeader from '@/menu/header'
 import menuAside from '@/menu/aside'
 import { frameInRoutes } from '@/router/routes'
 
-import VueHighcharts from 'vue-highcharts';
+import VueHighcharts from 'vue-highcharts'
+import axios from 'axios'
+Vue.prototype.$http = axios
 Vue.use(VueHighcharts)
 Vue.config.productionTip = false
 
