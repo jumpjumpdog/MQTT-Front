@@ -2,28 +2,61 @@
 /* eslint-disable no-tabs */
 <template>
         <el-form v-model="eqmForm">
-            <el-row>
+          <el-form-item>
+              <el-row>
                 <el-col :span="2"><span>设备编号</span></el-col>
-                <el-col :span="2">
-                    <el-input v-model="eqmForm.eqmId"></el-input>
+                <el-col :span="8">
+                    <el-select v-model="eqmForm.eqmId" placeholder="请选择">
+                          <el-option v-for="item in eqpid_list" :key="item.value" :label="item.value" :value="item.value"></el-option>
+                     </el-select>
                 </el-col>
                 <el-col :span="4" :offset="2">
-                <el-checkbox-group v-model="eqmForm.checkedAttributes" :min="1" :max="2">
-                    <el-checkbox v-for="attribute in eqmForm.attributes" :label="attribute" :key="attribute">
-                        {{attribute}}
-                    </el-checkbox>
-                </el-checkbox-group>
                 </el-col>
                 <el-col :span="2" :offset="1">
                     <el-button type="primary" @click="queryButton(eqmForm)">查询</el-button>
                 </el-col>
             </el-row>
+          </el-form-item >
+          <el-form-item v-show="normalInfo" label="设备名称">
+            <el-input v-model="eqp_name"></el-input>
+          </el-form-item>
+          <el-form-item label="运行状态" v-show="normalInfo">
+             <el-radio-group v-model="status" size="medium">
+                 <el-radio border label="有效"></el-radio>
+                 <el-radio border label="失效"></el-radio>
+             </el-radio-group>
+          </el-form-item>
+          <el-form-item label="安全温度" v-show="normalInfo">
+             <el-radio-group v-model="t_range" size="medium">
+               <el-row>
+                 <el-col :span="10">
+                    <el-input v-model="temperature[0]+'~'+temperature[1]"></el-input>
+                 </el-col>
+               </el-row>
+             </el-radio-group>
+          </el-form-item>
+          <el-form-item v-show="normalInfo" label="设备注册时间">
+            <el-input v-model="create_date"></el-input>
+          </el-form-item>
+           <el-form-item label="维护人员" v-show="normalInfo">
+                <el-select v-model="selected_owners"  multiple filterable allow-create default-first-option disabled="">
+                   <el-option v-for="item in owners" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+          </el-form-item>
             <el-form-item>
                 <div id="container" style="min-width:400px;height:400px"></div>
             </el-form-item>
+            <el-form-item>
+              <div id='container2' style="min-width:400px;height:400px"></div>
+            </el-form-item>
         </el-form>
+
 </template>
 <script>
+import { Mongo } from '@api/mongo.post'
+import { Mysql } from '@api/mysql.post'
+var mqtt = require('mqtt')
+
 const attributesConst = ['温度', '湿度']
 // 气温范围，数据格式：[时间戳, 范围起始值, 范围结束值]
 // 平均数据，格式：[时间戳, 值]
@@ -109,7 +142,29 @@ const tYAxisConst = { // 第一条Y轴
     style: {
       color: Highcharts.getOptions().colors[1]
     }
-  }
+  },
+  plotLines: [{
+    color: 'red', // 线的颜色，定义为红色
+    dashStyle: 'solid', // 默认值，这里定义为实线
+    value: 40, // 定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+    width: 2, // 标示线的宽度，2px
+    label: {
+      text: 'max-t', // 标签的内容
+      align: 'left', // 标签的水平位置，水平居左,默认是水平居中center
+      x: 10 // 标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
+    }
+  },
+  {
+    color: 'blue', // 线的颜色，定义为红色
+    dashStyle: 'solid', // 默认值，这里定义为实线
+    value: 20, // 定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+    width: 2, // 标示线的宽度，2px
+    label: {
+      text: 'min-t', // 标签的内容
+      align: 'left', // 标签的水平位置，水平居左,默认是水平居中center
+      x: 10 // 标签相对于被定位的位置水平偏移的像素，重新定位，水平居左10px
+    }
+  }]
 }
 
 const hYAxisConst = { // 第二条Y轴
@@ -164,8 +219,6 @@ for (; i < tRangesConst.length; i++) {
   hRangesConst[i][2] = Math.round(Math.random() * 100)
   hAverageConst[i][1] = (hRangesConst[i][1] + hRangesConst[i][2]) * 0.5
 }
-console.log(hAverageConst)
-console.log(tAveragesConst)
 const hRangeSeriesConst = {
   name: '范围',
   data: hRangesConst,
@@ -200,9 +253,25 @@ const hAverageSeriesConst = {
 export default{
   data () {
     return {
-      eqmForm: { 'eqmId': 1,
-        'createDate': '2016-05-02',
-        'isVaild': 'true',
+      selected_owners: [],
+      owners: [],
+      eqp_name: '',
+      t_range: '',
+      create_date: '',
+      status: '',
+      normalInfo: false,
+      eqpid_list: [],
+      client: 0,
+      chart: null,
+      chart2: null,
+      max_t: 0,
+      min_t: 0,
+      temperature: [-10, 100],
+      eqmForm: {
+        eqmId: 1,
+        createDate: '',
+        isVaild: 'true',
+        eqp_name: '',
         checkedAttributes: ['湿度'],
         attributes: attributesConst,
         temperatureRanges: tRangesConst,
@@ -213,43 +282,79 @@ export default{
 
     }
   },
-  computed: {
-    checkedAttributes () {
-      return this.$data.eqmForm.checkedAttributes
-    }
+  created () {
   },
   watch: {
-    // checkedAttributes (newValue, oldValue) {
-    //   console.log(newValue)
-    //   console.log(oldValue)
-    //   if (newValue.length === 2) {
-    //     let series = [tAverageSeriesConst, tRangeSeriesConst, hAverageSeriesConst, hRangeSeriesConst]
-    //     let yAxis = [tYAxisConst, hYAxisConst]
-    //     this.drawChart('T and H charts', series, yAxis)
-    //   } else if (newValue.length === 0) {
-    //     this.drawChart('T and H charts', [], [])
-    //   } else if (newValue[0] === '温度') {
-    //     let series = [tAverageSeriesConst, tRangeSeriesConst]
-    //     let yAxis = [tYAxisConst]
-    //     this.drawChart('T charts', series, yAxis)
-    //   } else if (newValue[0] === '湿度') {
-    //     let series = [hAverageSeriesConst, hRangeSeriesConst]
-    //     let yAxis = [hYAxisConst]
-    //     this.drawChart('H charts', series, yAxis)
-    //   }
-    // }
+
   },
   methods: {
+    handleCommand (command) {
+      this.$message('click on item ' + command)
+    },
+    onConnected: function () {
+      // 订阅presence主题
+      console.log('已连接')
+    },
+    onMessage: function (topic, message) {
+      console.log(message.toString())
+      let series = this.chart.series[0]
+      let series1 = this.chart.series[1]
+      message = JSON.parse(message.toString())
+      series.addPoint([message.create_time, message.temperature['t']], true, true)
+      series1.addPoint([message.create_time, message.temperature['min_t'], message.temperature['max_t']], true, true)
+      this.activeLastPointToolip(this.chart)
+    },
+    activeLastPointToolip: function (chart) {
+      // eslint-disable-next-line camelcase
+      var t_points = chart.series[0].points
+      chart.tooltip.refresh(t_points[t_points.length - 1])
+      var t_points1 = chart.series[1].points
+      chart.tooltip.refresh(t_points1[t_points1.length - 1])
+
+      // eslint-disable-next-line camelcase
+      // var h_points = chart.series[1].points
+      // chart.tooltip.refresh(h_points.length - 1)
+    },
     drawChart: function (title, pSeries, pYAxis, reversed = false) {
       // eslint-disable-next-line no-undef
-      console.log(pSeries.length)
-      Highcharts.chart('container', {
+      Highcharts.setOptions({
+        global: {
+          useUTC: false
+        }
+      })
+      var chart = Highcharts.chart('container', {
+        chart: {
+          type: 'spline',
+          marginRight: 10
+          // events: {
+          //   load: function () {
+          //     let series = this.series[0]
+          //     let series1 = this.series[1]
+          //     chart = this
+          //     console.log(this)
+
+          //     activeLastPointToolip(this)
+          //     // activeLastPointToolip(h)
+
+          //     setInterval(function () {
+          //       // eslint-disable-next-line camelcase
+          //       series.addPoint([current_time, new_t['t']], true, true)
+          //       series1.addPoint([current_time, new_t['min_t'], new_t['max_t']], true, true)
+          //       // console.log(this)
+          //       // console.log(this.new_t)
+          //       // t.addPoint([this.current_time, this.new_t['t']], true, true)
+          //       activeLastPointToolip(chart)
+          //     }, 2000)
+          //   }
+          // }
+        },
         title: {
           text: title
         },
         xAxis: {
           type: 'datetime',
-          crosshairs: true
+          crosshairs: true,
+          tickPixelInterval: 150
         },
         yAxis: pYAxis,
         // yAxis: {
@@ -260,30 +365,145 @@ export default{
         credits: {
           enabled: false // remove high chart logo hyper-link
         },
+        legend: {
+          enabled: false
+        },
         series: pSeries
       })
+      return chart
     },
     queryButton: function (eqmForm) {
-      console.log(eqmForm)
-      this.$data.eqmForm = { 'eqmId': 2,
-        'createDate': '2016-05-02',
-        'isVaild': 'true',
-        checkedAttributes: ['湿度'],
-        attributes: attributesConst,
-        temperatureRanges: tRangesConst,
-        temperatureAverages: tAveragesConst,
-        humidRanges: hRangesConst,
-        humidAverage: hAverageConst
-      }
+      // Mysql({
+      //   action: 'getTHistory',
+      //   id: eqmForm.eqmId
+      // }).then((res) => {
+      //   console.log(JSON.parse(res.toString()))
+      //   if (res.result === true) {
+      //     console.log(JSON.parse(res.toString()))
+      //   }
+      // // eslint-disable-next-line handle-callback-err
+      // }).catch((err) => {
+      //   console.log('绘制历史温度图错误')
+      // })
+
+      Mysql({
+        'action': 'getOwnersByEqpId',
+        'id': eqmForm.eqmId
+      }).then(
+        (res) => {
+          if (res.result === true) {
+            this.$data.owners = res.owners
+            var temp = []
+            for (var item of res.select_owners) {
+              temp.push(item['value'])
+            }
+            this.$data.selected_owners = temp
+            this.$data.owners = res.owners
+            this.normalInfo = true
+          } else {
+            alert('getOwnersByEqpId fail')
+          }
+        }
+      // eslint-disable-next-line handle-callback-err
+      ).catch((err) => {
+        console.log('getOwnersByEqpId 失败')
+        console.log(err)
+      })
+      Mysql({
+        'eqp_id': eqmForm.eqmId,
+        'action': 'normalInfo'
+      }).then(
+        (res) => {
+          if (res.result === true) {
+            this.$data.eqp_name = res.data['name']
+            this.$data.status = res.data['status']
+            this.$data.create_date = res.data['create_date']
+            this.$data.temperature = [res.data['min_t'], res.data['max_t']]
+            let tdata = res.tdata
+            for (var i = 0; i < tdata.length; i++) {
+              tdata[i][0] = parseInt(tdata[i][0])
+            }
+            let title = '历史温度数据'
+            if (tdata.length == 0) {
+              title = '暂无历史数据'
+            }
+            this.chart2 = Highcharts.chart('container2', {
+              chart: {
+                type: 'arearange',
+                zoomType: 'x' // 水平缩放
+              },
+              title: {
+                text: title
+              },
+              xAxis: {
+                type: 'datetime',
+                crosshairs: true,
+                labels: {
+                  formatter: function () {
+                    return Highcharts.dateFormat('%Y-%m-%d', this.value)
+                  }
+                }
+              },
+              yAxis: {
+                title: {
+                  text: null
+                }
+              },
+              tooltip: {
+                shared: true,
+                valueSuffix: '°C'
+              },
+              legend: {
+                enabled: false // 关闭图例
+              },
+              series: [{
+                name: '气温',
+                data: tdata
+              }]
+            })
+          }
+        }
+      ).catch(err => { console.log(err) })
       let series = [tAverageSeriesConst, tRangeSeriesConst, hAverageSeriesConst, hRangeSeriesConst]
       let yAxis = [tYAxisConst, hYAxisConst]
-      this.drawChart('T and H charts', series, yAxis)
+      // this.drawChart('T and H charts', series, yAxis)
+      Mongo({
+        'eqp_id': eqmForm.eqmId
+      }).then(
+        (res) => {
+          if (res.result === true) {
+            tAverageSeriesConst.data = res['t_average']
+            tRangeSeriesConst.data = res['t_range']
+            // let series = [tAverageSeriesConst, tRangeSeriesConst, hAverageSeriesConst, hRangeSeriesConst]
+            let series = [tAverageSeriesConst, tRangeSeriesConst]
+            // let yAxis = [tYAxisConst, hYAxisConst]
+            let yAxis = [tYAxisConst]
+            this.$data.chart = this.drawChart('T and H charts', series, yAxis)
+            this.client = mqtt.connect('mqtt://127.0.0.1', { port: 9001 })
+            this.client.on('connect', this.onConnected)
+            this.client.on('message', this.onMessage)
+            this.client.subscribe(eqmForm.eqmId + '/temperature')
+          } else {
+            if (this.$data.chart != null) {
+              this.chart.destroy()
+              this.client.disconnect()
+            }
+
+            alert('no such equipment')
+          }
+        }
+      ).catch((err) => { console.log(err) })
     }
   },
   mounted () {
-    let series = [tAverageSeriesConst, tRangeSeriesConst, hAverageSeriesConst, hRangeSeriesConst]
-    let yAxis = [tYAxisConst, hYAxisConst]
-    this.drawChart('T and H charts', series, yAxis)
+    Mysql({
+      'action': 'equipments'
+    }).then((res) => {
+      let eqpList = res.data
+      for (var eqp of eqpList) {
+        this.$data.eqpid_list.push({ 'label': eqp['name'], 'value': eqp['id'] })
+      }
+    }).catch((err) => { alert('初始化设备id异常') })
   }
 }
 </script>

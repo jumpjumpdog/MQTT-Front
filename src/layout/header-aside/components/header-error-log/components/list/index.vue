@@ -1,6 +1,6 @@
 <template>
   <el-table
-    :data="logReverse"
+    :data="exceptions"
     border
     stripe
     style="width: 100%"
@@ -92,37 +92,67 @@
     </el-table-column>
 
     <el-table-column
-      label="地址"
-      prop="url"
-      width="140px"
+      label="设备编号"
+      prop="eqp_id"
+      width="200px"
       :show-overflow-tooltip="true">
     </el-table-column>
 
     <el-table-column
-      label="内容"
-      prop="info"
-      :show-overflow-tooltip="true">
-    </el-table-column>
-
-    <el-table-column
-      label="错误类型"
-      width="140px"
-      :show-overflow-tooltip="true">
+      label="设备名"
+      width="200px" :show-overflow-tooltip="true">
       <template
         slot-scope="scope">
-        {{get(scope.row.err, 'name', '')}}
+        {{get(scope.row, 'name', '')}}
       </template>
     </el-table-column>
 
     <el-table-column
-      label="错误信息"
-      width="300px">
+      label="异常原因"
+      width="200px"
+      :show-overflow-tooltip="true">
       <template
         slot-scope="scope">
-        {{get(scope.row.err, 'message', '')}}
+        {{get(scope.row, 'reason', '')}}
       </template>
     </el-table-column>
-
+    <el-table-column
+       label="时间"
+        width="200px"
+      :show-overflow-tooltip="true">
+       <template
+        slot-scope="scope">
+        {{getTime(scope.row.create_date)}}
+      </template>
+    </el-table-column>
+    <el-table-column label="清除" align="center" min-width="20">
+            <template scope="scope" >
+                <el-button size="small" type="primary" icon="el-icon-check" @click="openHandleDialog(scope.$index, scope.row.propertities)"></el-button>
+            </template>
+    </el-table-column>
+      <el-dialog title="清除" :visible.sync="handleDialogVisible" width="30%" :append-to-body="true">
+        <el-form   label-width="80%" label-position="top">
+             <el-form-item label="维护人员">
+                <el-select
+    v-model="owner"
+    filterable
+    allow-create
+    default-first-option
+    placeholder="请选择操作员">
+    <el-option
+      v-for="item in selected_owners"
+      :key="item.value"
+      :label="item.label"
+      :value="item.value">
+    </el-option>
+  </el-select>
+    </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="handleDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="submit">确 定</el-button>
+        </span>
+    </el-dialog>
   </el-table>
 </template>
 
@@ -130,10 +160,30 @@
 import { mapState } from 'vuex'
 import { get } from 'lodash'
 import ExpandItem from './components/ExpandItem'
+import { Mysql } from '@api/mysql.post'
+var mqtt = require('mqtt')
 export default {
   name: 'd2-error-log-list',
   components: {
     ExpandItem
+  },
+  // data () {
+  //   return {
+  //     ExceptionList: null
+  //   }
+  // },
+  // mounted () {
+
+  // },
+  data () {
+    return {
+      owner: '',
+      selected_owners: [],
+      handleDialogVisible: false,
+      client: 0,
+      exceptions: [],
+      itemIndex: 0
+    }
   },
   computed: {
     ...mapState('d2admin', {
@@ -159,7 +209,70 @@ export default {
         return ''
       }
       return err.stack
+    },
+    openHandleDialog: function (index, row) {
+      this.$data.handleDialogVisible = true
+      this.$data.itemIndex = index
+      var eqp_id = this.$data.exceptions[this.$data.itemIndex].eqp_id
+      Mysql({
+        action: 'getOwnersByEqpId',
+        id: eqp_id
+      }).then((res) => {
+        this.$data.selected_owners = res.select_owners
+      }).catch((err) => { console.log(err) })
+    },
+    getTime: function (params) {
+      var date = new Date(parseInt(params))
+      var Y = date.getFullYear() + '-'
+      var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-'
+      var D = date.getDate() + ' '
+      return Y + M + D
+    },
+    submit: function () {
+      let para = {}
+      para['action'] = 'handleException'
+      para['id'] = this.exceptions[this.itemIndex]['id']
+      para['owner_id'] = this.owner
+      para['admin_id'] = '沈金伟'
+      Mysql(
+        para
+      ).then((res) => {
+        this.exceptions.splice(this.itemIndex, 1)
+        this.exceptionLength = this.exceptionLength - 1
+        this.handleDialogVisible = false
+        console.log('发送的值')
+        console.log(this.exceptionLength)
+        this.$emit('childByValue', this.exceptionLength)
+        alert('处理成功')
+      }).catch((err) => console.log(err))
+    },
+    initException: function (params) {
+      Mysql({
+        action: 'queryException'
+      }).then(
+        (res) => {
+          this.exceptions = res.data
+          this.exceptionLength = this.exceptions.length
+        }
+      ).catch((err) => console.log(err))
+    },
+    onConnected: function () {
+      // 订阅presence主题
+      console.log('已连接exeption')
+    },
+    onMessage: function (topic, message) {
+      message = JSON.parse(message.toString())
+      this.initException()
+      this.exceptionLength = message.exceptionLength
     }
+  },
+  created () {
+    // this.client = mqtt.connect('mqtt://127.0.0.1', { port: 9001 })
+    // this.client.on('connect', this.onConnected)
+    // this.client.on('message', this.onMessage)
+  },
+  mounted () {
+    this.initException()
   }
 }
 </script>

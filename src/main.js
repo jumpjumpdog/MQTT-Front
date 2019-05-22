@@ -16,8 +16,10 @@ import { frameInRoutes } from '@/router/routes'
 
 import VueHighcharts from 'vue-highcharts'
 import axios from 'axios'
+import DataTables from 'vue-data-tables'
 Vue.prototype.$http = axios
 Vue.use(VueHighcharts)
+Vue.use(DataTables)
 Vue.config.productionTip = false
 
 // 核心插件

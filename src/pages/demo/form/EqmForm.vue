@@ -7,11 +7,21 @@
     <el-form-item label="设备名称">
       <el-input v-model="EqmForm.eqmName"></el-input>
     </el-form-item>
-    <el-form-item label="设备负责人">
-    <el-select v-model="EqmForm.owner" placeholder="请选择">
-      <el-option v-for="item in owners" :key="item.value" :label="item.label" :value="item.value">
-      </el-option>
-    </el-select>
+    <el-form-item label="相关人员">
+                <el-select
+    v-model="selected_owners"
+    multiple
+    filterable
+    allow-create
+    default-first-option
+    placeholder="请选择操作员">
+    <el-option
+      v-for="item in owners"
+      :key="item.value"
+      :label="item.label"
+      :value="item.value">
+    </el-option>
+  </el-select>
     </el-form-item>
     <el-form-item label="设备安全温度范围">
       <div class="block">
@@ -23,10 +33,10 @@
           <el-slider v-model="EqmForm.humid" range show-stops :max="100"></el-slider>
       </div>
     </el-form-item>
-    <el-form-item label="有效状态">
+    <el-form-item label="运行状态">
       <el-radio-group v-model="EqmForm.isVaild" size="medium">
-        <el-radio border label="有效"></el-radio>
-        <el-radio border label="失效"></el-radio>
+        <el-radio border label="正常"></el-radio>
+        <el-radio border label="异常"></el-radio>
       </el-radio-group>
     </el-form-item>
     <el-form-item label="创建时间">
@@ -83,11 +93,13 @@ export default {
   name: 'EqmForm',
   data () {
     return {
+      selected_owners: [],
       EqmForm: {
+
         eqmId: '-1',
         createDate: new Date(),
         isVaild: '有效',
-        owner: '',
+        owner: [],
         temperature: [-10, 100],
         humid: [4, 10],
         eqmName: ''
@@ -124,7 +136,9 @@ export default {
       this.$refs[refname].resetFields()
     },
     createEqm: function (eqmForm) {
-      if (eqmForm.eqmId === -1) {
+      let selected_owners = this.selected_owners
+      if (eqmForm.eqmId == -1) {
+        console.log(selected_owners[0])
         alert('创建失败 请先获取设备ID')
       } else {
         Mysql({
@@ -136,7 +150,8 @@ export default {
           min_t: eqmForm.temperature[0],
           max_h: eqmForm.humid[1],
           min_h: eqmForm.humid[0],
-          is_valid: eqmForm.isVaild
+          is_valid: eqmForm.isVaild,
+          selected_owners: selected_owners
         }).then(
           (response) => {
             if (response.result === true) {

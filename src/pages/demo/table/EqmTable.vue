@@ -8,8 +8,6 @@
         </el-table-column>
         <el-table-column prop="status" label="有效状态" min-width="10%">
         </el-table-column>
-        <el-table-column prop="owner_id" label="设备负责人编号" min-width="20%">
-        </el-table-column>
         <el-table-column label="操作" align="center" min-width="20">
             <template scope="scope" >
                 <el-button size="small" type="primary" icon="el-icon-edit" @click="openEditDialog(scope.$index, scope.row.propertities)"></el-button>
@@ -34,9 +32,25 @@
             <el-form-item label="创建时间" prop="create_date">
                 <el-input v-model="editForm.create_date" ></el-input>
             </el-form-item>
-            <el-form-item label="有效状态"  prop="status">
+            <el-form-item label="状态"  prop="status">
                 <el-input v-model="editForm.status"></el-input>
             </el-form-item>
+             <el-form-item label="维护人员">
+                <el-select
+    v-model="selected_owners"
+    multiple
+    filterable
+    allow-create
+    default-first-option
+    placeholder="请选择操作员">
+    <el-option
+      v-for="item in owners"
+      :key="item.value"
+      :label="item.label"
+      :value="item.value">
+    </el-option>
+  </el-select>
+    </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
             <el-button type="primary" @click="editDialogVisible = false">取 消</el-button>
@@ -45,14 +59,16 @@
         </span>
     </el-dialog>
     </el-table>
+
 </template>
 
 <script>
 import { Mysql } from '@api/mysql.post'
-import { truncate } from 'fs'
 export default {
   data () {
     return {
+      selected_owners: [],
+      owners: [],
       eqmList: [
 
       ],
@@ -96,6 +112,30 @@ export default {
       for (let key in sourceForm) {
         this.$data.editForm[key] = sourceForm[key]
       }
+      let eqp_id = this.$data.editForm['id']
+      Mysql({
+        'action': 'getOwnersByEqpId',
+        'id': eqp_id
+      }).then(
+        (res) => {
+          if (res.result === true) {
+            this.$data.owners = res.owners
+            var temp = []
+            for (var item of res.select_owners) {
+              temp.push(item['value'])
+            }
+            this.$data.selected_owners = temp
+            this.$data.owners = res.owners
+          } else {
+            alert('getOwnersByEqpId fail')
+          }
+        }
+      // eslint-disable-next-line handle-callback-err
+      ).catch((err) => {
+        console.log('getOwnersByEqpId 失败')
+        console.log(err)
+      })
+      console.log(this.selected_owners)
     },
     handleEdit: function () {
       let para = {}
@@ -103,6 +143,7 @@ export default {
       for (let key in this.$data.editForm) {
         para[key] = this.$data.editForm[key]
       }
+      para['owners'] = this.$data.selected_owners
       Mysql(
         para
       ).then((res) => {
