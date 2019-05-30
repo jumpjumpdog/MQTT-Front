@@ -17,6 +17,16 @@ import { frameInRoutes } from '@/router/routes'
 import VueHighcharts from 'vue-highcharts'
 import axios from 'axios'
 import DataTables from 'vue-data-tables'
+import 'video.js/dist/video-js.css'
+import 'videojs-flash'
+import 'videojs-contrib-hls.js/src/videojs.hlsjs'
+var VideoPlayer = require('vue-video-player')
+// VideoPlayer.config({
+//   youtube: true, // default false
+//   switcher: false, // default true
+//   hls: false // default true
+// })
+Vue.use(VideoPlayer)
 Vue.prototype.$http = axios
 Vue.use(VueHighcharts)
 Vue.use(DataTables)
@@ -35,8 +45,9 @@ new Vue({
     this.$store.commit('d2admin/page/init', frameInRoutes)
     // 设置顶栏菜单
     this.$store.commit('d2admin/menu/headerSet', menuHeader)
-    // 设置侧边栏菜单
+
     this.$store.commit('d2admin/menu/asideSet', menuAside)
+
     // 初始化菜单搜索功能
     this.$store.commit('d2admin/search/init', menuHeader)
   },

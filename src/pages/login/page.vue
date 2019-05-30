@@ -54,19 +54,17 @@
               <span>注册用户</span>
             </p>
             <!-- 快速登录按钮 -->
-            <el-button class="page-login--quick" size="default" type="info" @click="dialogVisible = true">
+            <el-button v-show="false" class="page-login--quick" size="default" type="info" @click="dialogVisible = true">
               快速选择用户（测试功能）
             </el-button>
           </div>
         </div>
         <div class="page-login--content-footer">
           <p class="page-login--content-footer-options">
-            <a href="#">帮助</a>
-            <a href="#">隐私</a>
-            <a href="#">条款</a>
+
           </p>
           <p class="page-login--content-footer-copyright">
-            Copyright <d2-icon name="copyright"/> 2018 D2 Projects 开源组织出品 <a href="https://github.com/FairyEver">@FairyEver</a>
+
           </p>
         </div>
       </div>
@@ -90,6 +88,9 @@
 <script>
 import dayjs from 'dayjs'
 import { mapActions } from 'vuex'
+import { Mysql } from '@api/mysql.post'
+import menuAside from '@/menu/aside'
+import menuAside2 from '@/menu/aside2'
 export default {
   data () {
     return {
@@ -146,6 +147,14 @@ export default {
     ...mapActions('d2admin/account', [
       'login'
     ]),
+    mysqlLogin () {
+      return Mysql({
+        action: 'login',
+        name: this.formLogin.username,
+        password: this.formLogin.password
+      // eslint-disable-next-line handle-callback-err
+      })
+    },
     refreshTime () {
       this.time = dayjs().format('HH:mm:ss')
     },

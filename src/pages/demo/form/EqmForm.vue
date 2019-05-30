@@ -28,15 +28,12 @@
           <el-slider v-model="EqmForm.temperature" range show-stops :max="110"></el-slider>
       </div>
     </el-form-item>
-    <el-form-item label="设备安全湿度范围">
-      <div class="block">
-          <el-slider v-model="EqmForm.humid" range show-stops :max="100"></el-slider>
-      </div>
-    </el-form-item>
+
     <el-form-item label="运行状态">
       <el-radio-group v-model="EqmForm.isVaild" size="medium">
-        <el-radio border label="正常"></el-radio>
-        <el-radio border label="异常"></el-radio>
+        <el-radio border label="状态未知"></el-radio>
+        <el-radio border label="暂未上线"></el-radio>
+        <el-radio border label="正常运行"></el-radio>
       </el-radio-group>
     </el-form-item>
     <el-form-item label="创建时间">

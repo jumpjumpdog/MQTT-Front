@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="show"
+    v-if=false
     class="d2-source"
     :class="{ 'd2-source--active': isActive }"
     @click="handleClick">

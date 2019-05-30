@@ -33,7 +33,7 @@
           清空
         </el-button>
       </div>
-      <d2-error-log-list v-on:childByValue="childByValue"/>
+      <d2-error-log-list v-on:childByValue="childByValue" :exceptionLength="exceptionLength"/>
     </el-dialog>
   </div>
 </template>
@@ -102,7 +102,7 @@ export default {
         console.log(topic)
         console.log(message.toString())
         message = JSON.parse(message.toString())
-        this.exceptionLength = message
+        this.exceptionLength = this.exceptionLength + 1
       }
     },
     ...mapMutations('d2admin/log', [

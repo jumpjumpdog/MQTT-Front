@@ -1,6 +1,5 @@
 import util from '@/libs/util.js'
 import { AccountLogin } from '@api/sys.login'
-
 export default {
   namespaced: true,
   actions: {
@@ -31,6 +30,11 @@ export default {
             // 如有必要 token 需要定时更新，默认保存一天
             util.cookies.set('uuid', res.uuid)
             util.cookies.set('token', res.token)
+            // if (res.userType === 'admin') {
+            //   this.$store.commit('d2admin/menu/asideSet', menuAside)
+            // } else {
+            //   this.$store.commit('d2admin/menu/asideSet', menuAside2)
+            // }
             // 设置 vuex 用户信息
             await dispatch('d2admin/user/set', {
               name: res.name

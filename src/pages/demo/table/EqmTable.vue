@@ -6,7 +6,7 @@
         </el-table-column>
         <el-table-column prop="create_date" label="创建时间" min-width="20%">
         </el-table-column>
-        <el-table-column prop="status" label="有效状态" min-width="10%">
+        <el-table-column prop="status" label="状态" min-width="10%">
         </el-table-column>
         <el-table-column label="操作" align="center" min-width="20">
             <template scope="scope" >
@@ -14,6 +14,14 @@
                 <el-button size="small" type="danger" icon="el-icon-delete" @click="openDeleteDialog(scope.$index, scope.row.propertities)"></el-button>
             </template>
         </el-table-column>
+        <el-table-column label="监控" align="center" min-width="10%">
+          <template scope="scope" >
+                <el-button size="small" type="primary" icon="el-icon-caret-right" @click="watchDialogVisible=true"></el-button>
+            </template>
+        </el-table-column>
+    <el-dialog title="视频监控" :visible.sync="watchDialogVisible" width="30%" :append-to-body="true">
+      <video-player :options="videoOptions" ></video-player>
+    </el-dialog>
     <el-dialog title="提示" :visible.sync="deleteDialogVisible" width="30%" :append-to-body="true">
         <span>确认删除?</span>
         <span slot="footer" class="dialog-footer">
@@ -67,6 +75,21 @@ import { Mysql } from '@api/mysql.post'
 export default {
   data () {
     return {
+      videoOptions: {
+        source: {
+          type: 'rtmp/mp4',
+          src: 'rtmp://dev.svideo.com.cn/myapp/14859',
+          notSupportedMessage: '此视频暂无法播放，请稍后再试',
+          withCredentials: false,
+          preload: 'auto'
+        },
+        language: 'zh-CN',
+        live: true,
+        autoplay: true,
+        height: 400,
+        width: 400
+      },
+      watchDialogVisible: false,
       selected_owners: [],
       owners: [],
       eqmList: [
@@ -180,8 +203,9 @@ export default {
       action: 'equipments'
     }).then((response) => {
       this.$data.eqmList = response.data
-      console.log('获取成功')
-      console.log(this.$data.eqmList)
+      // this.initVideo()
+      // console.log('获取成功')
+      // console.log(this.$data.eqmList)
     // eslint-disable-next-line handle-callback-err
     }).catch((err) => {
       console.log(err)

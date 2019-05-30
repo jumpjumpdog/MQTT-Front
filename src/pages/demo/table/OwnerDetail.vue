@@ -29,8 +29,8 @@
                          </data-tables>
                   </el-form-item>
             </el-form-item>
-
     </el-form>
+
 </template>
 <script>
 import { Mysql } from '@api/mysql.post'

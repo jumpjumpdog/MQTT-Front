@@ -8,58 +8,33 @@
 
     <el-table-column type="expand">
       <div slot-scope="props" class="d2-error-log-list__expand-group">
-        <expand-item
-          :type="props.row.type"
-          title="类型"
-          :value="props.row.type === 'log' ? '日志' : '异常'"/>
-        <expand-item
-          :type="props.row.type"
-          title="内容"
-          :value="props.row.info"/>
-        <expand-item
-          v-if="props.row.type === 'error'"
-          type="error"
-          title="报错组件"
-          :value="get(props.row.vm, '$vnode.tag', '')"/>
-        <expand-item
-          v-if="props.row.type === 'error'"
-          type="error"
-          title="错误名称"
-          :value="get(props.row.err, 'name', '')"/>
-        <expand-item
-          v-if="props.row.type === 'error'"
-          type="error"
-          title="错误信息"
-          :value="get(props.row.err, 'message', '')"/>
-        <expand-item
-          v-if="props.row.type === 'error'"
-          type="error"
-          title="错误堆栈"
-          value="见下">
-          <div style="overflow: auto;">
-            <pre>{{stackBeautify(props.row.err)}}</pre>
-          </div>
+        <expand-item   title="异常设备编号">
+          <span>{{props.row.eqp_id}}</span>
         </expand-item>
-        <expand-item
-          :type="props.row.type"
-          title="用户名"
-          :value="get(props.row.user, 'name', '')"/>
-        <expand-item
-          :type="props.row.type"
-          title="uuid"
-          :value="props.row.uuid"/>
-        <expand-item
-          :type="props.row.type"
-          title="token"
-          :value="props.row.token"/>
-        <expand-item
-          :type="props.row.type"
-          title="页面地址"
-          :value="props.row.url"/>
-        <expand-item
-          :type="props.row.type"
-          title="时间"
-          :value="props.row.time"/>
+        <expand-item   title="异常设备名称">
+          <span>{{props.row.name}}</span>
+        </expand-item>
+        <expand-item   title="时间">
+          <span> {{getTime(props.row.create_date)}}</span>
+        </expand-item>
+        <expand-item   title="异常状态">
+          <span>{{props.row.status}}</span>
+        </expand-item>
+         <expand-item   title="设备安全温度">
+          <span>{{props.row.status}}℃</span>
+        </expand-item>
+        <expand-item   title="异常温度">
+          <span>{{props.row.t}}℃</span>
+        </expand-item>
+        <expand-item   title="设备负责人列表">
+          <span>{{props.row.status}}</span>
+        </expand-item>
+        <expand-item   title="当前负责人编号">
+          <span>{{props.row.owner_id}}</span>
+        </expand-item>
+         <expand-item   title="当前负责人名">
+          <span>{{props.row.owner_name}}</span>
+        </expand-item>
       </div>
     </el-table-column>
 
@@ -103,7 +78,7 @@
       width="200px" :show-overflow-tooltip="true">
       <template
         slot-scope="scope">
-        {{get(scope.row, 'name', '')}}
+        {{scope.row.name}}
       </template>
     </el-table-column>
 
@@ -113,11 +88,20 @@
       :show-overflow-tooltip="true">
       <template
         slot-scope="scope">
-        {{get(scope.row, 'reason', '')}}
+        {{scope.row.reason}}
       </template>
     </el-table-column>
     <el-table-column
-       label="时间"
+      label="异常处理状态"
+      width="200px"
+      :show-overflow-tooltip="true">
+      <template
+        slot-scope="scope">
+        {{scope.row.status}}
+      </template>
+    </el-table-column>
+    <el-table-column
+       label="异常时间"
         width="200px"
       :show-overflow-tooltip="true">
        <template
@@ -125,12 +109,17 @@
         {{getTime(scope.row.create_date)}}
       </template>
     </el-table-column>
-    <el-table-column label="清除" align="center" min-width="20">
+     <el-table-column label="处理" align="center" min-width="20">
             <template scope="scope" >
-                <el-button size="small" type="primary" icon="el-icon-check" @click="openHandleDialog(scope.$index, scope.row.propertities)"></el-button>
+              <el-button size="small" type="primary" icon="el-icon-check" @click="openHandleDialog(scope.$index, scope.row.propertities)"></el-button>
             </template>
     </el-table-column>
-      <el-dialog title="清除" :visible.sync="handleDialogVisible" width="30%" :append-to-body="true">
+    <el-table-column label="清除" align="center" min-width="20">
+            <template scope="scope" >
+              <el-button size="small" type="primary" icon="el-icon-check" @click="submit"></el-button>
+            </template>
+    </el-table-column>
+      <el-dialog title="维护员选择" :visible.sync="handleDialogVisible" width="30%" :append-to-body="true">
         <el-form   label-width="80%" label-position="top">
              <el-form-item label="维护人员">
                 <el-select
@@ -150,7 +139,7 @@
         </el-form>
         <span slot="footer" class="dialog-footer">
             <el-button type="primary" @click="handleDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="submit">确 定</el-button>
+            <el-button type="primary" @click="arrange">确 定</el-button>
         </span>
     </el-dialog>
   </el-table>
@@ -175,6 +164,7 @@ export default {
   // mounted () {
 
   // },
+  props: ['exceptionLength'],
   data () {
     return {
       owner: '',
@@ -182,7 +172,8 @@ export default {
       handleDialogVisible: false,
       client: 0,
       exceptions: [],
-      itemIndex: 0
+      itemIndex: 0,
+      temp: this.exceptionLength
     }
   },
   computed: {
@@ -226,23 +217,46 @@ export default {
       var Y = date.getFullYear() + '-'
       var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-'
       var D = date.getDate() + ' '
-      return Y + M + D
+      var H = date.getHours() + ':'
+      var Min = date.getMinutes() + ':'
+      var S = date.getSeconds()
+      if (S.toString().length == 1) {
+        S = '0' + S
+      }
+      return Y + M + D + H + Min + S
+    },
+    arrange: function (params) {
+      let para = {}
+      para['action'] = 'arrangeException'
+      para['id'] = this.exceptions[this.itemIndex]['id']
+      para['owner_id'] = this.owner
+      para['admin_id'] = '沈金伟'
+      Mysql(para).then((res) => {
+        this.exceptions[this.itemIndex].status = '待处理'
+        this.exceptions[this.itemIndex].owner_id = this.owner
+        this.exceptions[this.itemIndex].owner_name = res.owner_name
+        this.handleDialogVisible = false
+      })
     },
     submit: function () {
       let para = {}
       para['action'] = 'handleException'
       para['id'] = this.exceptions[this.itemIndex]['id']
+      if (this.exceptions[this.itemIndex].status === '待分配') {
+        alert('请先分配异常')
+        this.handleDialogVisible = false
+      }
       para['owner_id'] = this.owner
       para['admin_id'] = '沈金伟'
       Mysql(
         para
       ).then((res) => {
         this.exceptions.splice(this.itemIndex, 1)
-        this.exceptionLength = this.exceptionLength - 1
+        this.temp = this.temp - 1
         this.handleDialogVisible = false
         console.log('发送的值')
-        console.log(this.exceptionLength)
-        this.$emit('childByValue', this.exceptionLength)
+        console.log(this.temp)
+        this.$emit('childByValue', this.temp)
         alert('处理成功')
       }).catch((err) => console.log(err))
     },
@@ -251,6 +265,7 @@ export default {
         action: 'queryException'
       }).then(
         (res) => {
+          console.log(res.data)
           this.exceptions = res.data
           this.exceptionLength = this.exceptions.length
         }
@@ -264,6 +279,7 @@ export default {
       message = JSON.parse(message.toString())
       this.initException()
       this.exceptionLength = message.exceptionLength
+      this.initException()
     }
   },
   created () {
@@ -273,6 +289,12 @@ export default {
   },
   mounted () {
     this.initException()
+  },
+  watch: {
+    exceptionLength () {
+      this.temp = this.exceptionLength
+      this.initException()
+    }
   }
 }
 </script>
