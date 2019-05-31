@@ -9,7 +9,8 @@
 export default {
   name: 'EqmList',
   components: {
-    'EqmTable': () => import('../table/EqmTable.vue')
+    'EqmTable': () => import('../table/EqmTable.vue'),
+    'HelloWorld': () => import('../table/HelloWorld.vue')
   },
   data () {
     return {

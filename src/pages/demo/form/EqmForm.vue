@@ -36,6 +36,19 @@
         <el-radio border label="正常运行"></el-radio>
       </el-radio-group>
     </el-form-item>
+    <el-form-item>
+              <el-row>
+                <el-col :span="2"><span>视频源</span></el-col>
+                <el-col :span="6">
+                    <el-select v-model="urlType" placeholder="请选择">
+                          <el-option v-for="item in urlList" :key="item.value" :label="item.value" :value="item.value"></el-option>
+                     </el-select>
+                </el-col>
+                <el-col :span="6" :offset="1">
+                    <el-input  v-model="EqmForm.url"></el-input>
+                </el-col>
+            </el-row>
+          </el-form-item >
     <el-form-item label="创建时间">
       <span>{{EqmForm.createDate|dataFormat('yyyy-MM-dd hh:mm:ss')}}</span>
     </el-form-item>
@@ -50,7 +63,7 @@
               <el-input v-model="adminForm.adminName"> </el-input>
             </el-form-item>
             <el-form-item label="密码" prop="adminPassword">
-                <el-input v-model="adminForm.adminPassword"></el-input>
+                <el-input v-model="adminForm.adminPassword" type='password'></el-input>
             </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
@@ -90,9 +103,17 @@ export default {
   name: 'EqmForm',
   data () {
     return {
+      urlType: '',
       selected_owners: [],
+      urlList: [{
+        value: 'rtmp',
+        label: 'RTMP'
+      }, {
+        value: 'hls',
+        label: 'HLS'
+      }],
       EqmForm: {
-
+        url: '',
         eqmId: '-1',
         createDate: new Date(),
         isVaild: '有效',
@@ -147,6 +168,7 @@ export default {
           min_t: eqmForm.temperature[0],
           max_h: eqmForm.humid[1],
           min_h: eqmForm.humid[0],
+          url: eqmForm.url,
           is_valid: eqmForm.isVaild,
           selected_owners: selected_owners
         }).then(

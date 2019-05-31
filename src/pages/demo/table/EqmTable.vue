@@ -16,11 +16,23 @@
         </el-table-column>
         <el-table-column label="监控" align="center" min-width="10%">
           <template scope="scope" >
-                <el-button size="small" type="primary" icon="el-icon-caret-right" @click="watchDialogVisible=true"></el-button>
+                <el-button size="small" type="primary" icon="el-icon-caret-right" @click="openWatchDialog(scope.$index, scope.row.propertities)"></el-button>
             </template>
         </el-table-column>
     <el-dialog title="视频监控" :visible.sync="watchDialogVisible" width="30%" :append-to-body="true">
-      <video-player :options="videoOptions" ></video-player>
+       <div class="player-container">
+    <video-player class="vjs-custom-skin" :options="playerOptions"></video-player>
+  </div>
+
+      <!-- <video
+     id="livestream"
+     class="video-js vjs-default-skin vjs-big-play-centered"
+     controls
+     autoplay
+     preload="auto"
+     data-setup='{"techorder" : ["flash","html5] }'>
+     <source src="rtmp://dev.svideo.com.cn/myapp/50047" type="rtmp/mp4">
+   </video> -->
     </el-dialog>
     <el-dialog title="提示" :visible.sync="deleteDialogVisible" width="30%" :append-to-body="true">
         <span>确认删除?</span>
@@ -72,22 +84,34 @@
 
 <script>
 import { Mysql } from '@api/mysql.post'
+// 引入video样式
+import 'video.js/dist/video-js.css'
+import 'vue-video-player/src/custom-theme.css'
+
 export default {
   data () {
     return {
-      videoOptions: {
-        source: {
-          type: 'rtmp/mp4',
-          src: 'rtmp://dev.svideo.com.cn/myapp/14859',
-          notSupportedMessage: '此视频暂无法播放，请稍后再试',
-          withCredentials: false,
-          preload: 'auto'
-        },
+      playerOptions: {
+        crossOrigin: 'Anonymous',
+        playbackRates: [0.7, 1.0, 1.5, 2.0], // 播放速度
+        autoplay: true, // 如果true,浏览器准备好时开始回放。
+        controls: true, // 控制条
+        preload: 'auto', // 视频预加载
+        muted: false, // 默认情况下将会消除任何音频。
+        loop: false, // 导致视频一结束就重新开始。
         language: 'zh-CN',
-        live: true,
-        autoplay: true,
-        height: 400,
-        width: 400
+        aspectRatio: '16:9', // 将播放器置于流畅模式，并在计算播放器的动态大小时使用该值。值应该代表一个比例 - 用冒号分隔的两个数字（例如"16:9"或"4:3"）
+        fluid: true, // 当true时，Video.js player将拥有流体大小。换句话说，它将按比例缩放以适应其容器。
+        sources: [{
+          type: 'application/x-mpegURL',
+          src: 'http://dev.svideo.com.cn:1880/hlslive/50047.m3u8'
+        }, {
+          type: 'application/x-mpegURL',
+          src: 'http://dev.svideo.com.cn:1880/hlslive/14859.m3u8'
+        }],
+        poster: 'http://static.smartisanos.cn/pr/img/video/video_03_cc87ce5bdb.jpg', // 你的封面地址
+        width: document.documentElement.clientWidth,
+        notSupportedMessage: '此视频暂无法播放，请稍后再试' // 允许覆盖Video.js无法播放媒体源时显示的默认信息。
       },
       watchDialogVisible: false,
       selected_owners: [],
@@ -105,6 +129,16 @@ export default {
     }
   },
   methods: {
+    openWatchDialog: function (index, row) {
+      var sourceForm = this.$data.eqmList[index]
+      if (sourceForm['url'] !== null) {
+        console.log(sourceForm['url'])
+        this.playerOptions.sources[0].src = sourceForm.url
+        this.watchDialogVisible = true
+      } else {
+        alert('该设备未指定视频源')
+      }
+    },
     handleDelete: function () {
       // handleDelete(scope.$index, scope.row.properties)
       let deleteItem = this.$data.eqmList[this.$data.itemIndex]

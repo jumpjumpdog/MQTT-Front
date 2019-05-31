@@ -22,6 +22,11 @@
                   <el-form-item label="联系方式">
                       <el-input v-model="telephone"></el-input>
                   </el-form-item>
+                  <el-form-item label="负责设备" v-show="normalInfo">
+                <el-select v-model="selected_eqps"  multiple filterable allow-create default-first-option disabled="">
+                   <el-option v-for="item in eqps" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                </el-select>
+               </el-form-item>
                   <el-form-item>
                           <data-tables :data="data" :table-props="tableProps">
                             <!--这里加入 table-props 监听-->
@@ -37,6 +42,8 @@ import { Mysql } from '@api/mysql.post'
 export default {
   data () {
     return {
+      selected_eqps: [],
+      eqps: [],
       normalInfo: true,
       ownerId: '',
       ownerName: '',
@@ -56,6 +63,10 @@ export default {
       }, {
         prop: 'create_date',
         label: '异常时间'
+      },
+      {
+        prop: 't',
+        label: '异常温度'
       },
       {
         prop: 'reason',
@@ -81,9 +92,10 @@ export default {
     },
     queryButton: function (ownerId) {
       for (var item of this.owners) {
-        if (item.id == ownerId) {
+        if (item.id === ownerId) {
           this.ownerName = item.name
           this.telephone = item.telephone
+          this.selected_owners = item.selected_owners
           break
         }
       }
@@ -93,6 +105,12 @@ export default {
       }).then(
         (res) => {
           this.$data.data = res.data
+          this.$data.eqps = res.eqps
+          var temp = []
+          for (var item of res.eqps) {
+            temp.push(item['value'])
+          }
+          this.selected_eqps = temp
           for (var i = 0; i < res.data.length; i++) {
             this.$data.data[i].create_date = this.getTime(this.$data.data[i].create_date)
             this.$data.data[i].fix_date = this.getTime(this.$data.data[i].fix_date)

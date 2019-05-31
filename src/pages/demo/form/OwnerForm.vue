@@ -28,7 +28,7 @@
               <el-input v-model="adminForm.adminName"> </el-input>
             </el-form-item>
             <el-form-item label="密码" prop="adminPassword">
-                <el-input v-model="adminForm.adminPassword"></el-input>
+                <el-input v-model="adminForm.adminPassword" type='password'></el-input>
             </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">

@@ -17,16 +17,12 @@ import { frameInRoutes } from '@/router/routes'
 import VueHighcharts from 'vue-highcharts'
 import axios from 'axios'
 import DataTables from 'vue-data-tables'
-import 'video.js/dist/video-js.css'
-import 'videojs-flash'
-import 'videojs-contrib-hls.js/src/videojs.hlsjs'
-var VideoPlayer = require('vue-video-player')
-// VideoPlayer.config({
-//   youtube: true, // default false
-//   switcher: false, // default true
-//   hls: false // default true
-// })
+import VideoPlayer from 'vue-video-player'
+
+require('video.js/dist/video-js.css')
+require('vue-video-player/src/custom-theme.css')
 Vue.use(VideoPlayer)
+
 Vue.prototype.$http = axios
 Vue.use(VueHighcharts)
 Vue.use(DataTables)

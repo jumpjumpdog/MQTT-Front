@@ -5,7 +5,15 @@
       <el-table-column prop="name" label="用户名"  min-width="30%">
       </el-table-column>
       <el-table-column prop="password" label="密码"  min-width="30%">
+        <template slot-scope="scope">
+          <el-input    type="password" v-model="scope.row.password" placeholder="请输入新密码">
+            <i slot="suffix" title="显示密码" @click="changePass(scope.$index,'show',$event)" style="cursor:pointer;"
+               class="el-input__icon iconfont icon-yincang el-icon-view"></i>
+          </el-input>
+        </template>
+
       </el-table-column>
+
       <el-table-column prop="telephone" label=""  min-width="30%">
       </el-table-column>
       <el-table-column label="操作" align="center" min-width="20">
@@ -30,7 +38,10 @@
                 <el-input v-model="editForm.name"></el-input>
             </el-form-item>
             <el-form-item label="密码" prop="password" >
-                <el-input v-model="editForm.password" ></el-input>
+                <el-input type="password" v-model="editForm.password" placeholder="请输入新密码">
+            <i slot="suffix" title="passwordTitle" @click="changePass()" style="cursor:pointer;"
+               class="el-input__icon iconfont icon-yincang"></i>
+          </el-input>
             </el-form-item>
             <el-form-item label="联系方式"  prop="telephone">
                 <el-input v-model="editForm.telephone"></el-input>
@@ -68,6 +79,28 @@ export default{
     }
   },
   methods: {
+    changePass: function (index, value, event) {
+      if (event.target.title === '显示密码') {
+        event.target.parentElement.parentElement.previousElementSibling.type = 'text'
+        event.target.title = '隐藏密码'
+        event.target.class = 'el-icon-thumb'
+        // event.target.parentElement
+      } else {
+        event.target.title = '显示密码'
+        event.target.class = 'el-icon-view'
+        event.target.parentElement.parentElement.previousElementSibling.type = 'password'
+      }
+      // console.log(index)
+      // console.log(value)
+      // this.$data.ownerList[index]['visible'] = !(value === 'show')
+      // if (this.passwordShow === 'password') {
+      //   this.passwordShow = 'text'
+      //   this.passwordTitle = '隐藏密码'
+      // } else {
+      //   this.passwordShow = 'password'
+      //   this.passwordTitle = '显示密码'
+      // }
+    },
     handleDelete: function () {
       // handleDelete(scope.$index, scope.row.properties)
       let deleteItem = this.$data.ownerList[this.$data.itemIndex]
@@ -159,6 +192,9 @@ export default{
       if (res.result === true) {
         console.log(res.data)
         this.$data.ownerList = res.data
+        for (var i = 0; i < res.data.length; i++) {
+          this.$data.ownerList[i]['visible'] = false
+        }
       } else {
         alert('获取所有用户 fail')
       }
