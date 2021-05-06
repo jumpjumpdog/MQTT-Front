@@ -36,7 +36,7 @@
     "qs": "^6.6.0",
     "screenfull": "^4.0.0",
     "stompjs": "^2.3.3",
-    "ua-parser-js": "^0.7.18",
+    "ua-parser-js": "^0.7.24",
     "video.js": "^7.5.4",
     "videojs-contrib-hls.js": "^3.2.0",
     "vue": "^2.5.17",
